@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Selling & Buying Activity - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>Selling &amp; Buying Activity</h2>
+
+  {% for fund in funds %}
+    <section>
+      <h3>{{ fund.fund_name }}
+        {% if fund.have_comparison %}
+          <span class="period">({{ fund.previous_period }} &rarr; {{ fund.latest_period }})</span>
+        {% endif %}
+      </h3>
+
+      {% if not fund.have_comparison %}
+        <p class="empty">Only one filing stored so far - need two quarters to compare.</p>
+      {% else %}
+        <h4>Reduced or Exited</h4>
+        {% if fund.reduced %}
+          <table>
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Company</th>
+                <th>Shares (prev. qtr)</th>
+                <th>Shares (this qtr)</th>
+                <th>% Change</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in fund.reduced %}
+                <tr>
+                  <td>{{ row.ticker }}</td>
+                  <td>{{ row.company_name }}</td>
+                  <td>{{ row.shares_previous|shares }}</td>
+                  <td>{{ row.shares_latest|shares }}</td>
+                  <td>{{ row.pct_change|pct_change }}</td>
+                  <td>{% if row.sold_out %}<strong>SOLD OUT</strong>{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="empty">No reductions or exits this quarter.</p>
+        {% endif %}
+
+        <h4>New Buys &amp; Increases</h4>
+        {% if fund.increased %}
+          <table>
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Company</th>
+                <th>Shares (prev. qtr)</th>
+                <th>Shares (this qtr)</th>
+                <th>% Change</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in fund.increased %}
+                <tr>
+                  <td>{{ row.ticker }}</td>
+                  <td>{{ row.company_name }}</td>
+                  <td>{{ row.shares_previous|shares }}</td>
+                  <td>{{ row.shares_latest|shares }}</td>
+                  <td>{{ row.pct_change|pct_change }}</td>
+                  <td>{% if row.is_new %}<strong>NEW</strong>{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="empty">No new buys or increases this quarter.</p>
+        {% endif %}
+      {% endif %}
+    </section>
+  {% endfor %}
+{% endblock %}

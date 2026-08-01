@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}13F Tracker{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header>
+    <h1>13F Hedge Fund Tracker</h1>
+    <nav>
+      <a href="{{ url_for('positions') }}">Current Positions</a>
+      <a href="{{ url_for('selling') }}">Selling &amp; Buying Activity</a>
+      <a href="{{ url_for('overlap') }}">Overlap</a>
+      <a href="{{ url_for('strategy') }}">By Strategy</a>
+    </nav>
+    <p class="last-updated">
+      Last updated: {{ last_updated or "never - run fetch_filings.py" }}
+    </p>
+    <p class="disclaimer">
+      13F data is quarterly and can be delayed up to 45 days after quarter-end.
+      It only covers long U.S. equity positions (no shorts, cash, bonds, or non-US
+      holdings). "Selling" below means a reduction from one quarter's filing to
+      the next, not a real-time trade.
+    </p>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

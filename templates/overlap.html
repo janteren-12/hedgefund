@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Overlap - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>Overlap: Who Holds What</h2>
+  <p class="empty">
+    Each row is a stock held by 2 or more tracked funds. Each column is a
+    fund, ordered biggest to smallest by 13F portfolio value (shown under
+    the fund name) - not full AUM, since 13F only covers long U.S. equity
+    positions. The number in a fund's column is that stock's % of that
+    fund's 13F portfolio. A blank cell means that fund doesn't hold the
+    stock.
+  </p>
+
+  {% if rows %}
+    <div class="table-scroll">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Ticker</th>
+            <th>Company</th>
+            <th># Funds</th>
+            {% for fund in fund_columns %}
+              <th>{{ fund.name }}<br><span class="fund-total">{{ fund.total_value|usd_compact }}</span></th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>{{ row.ticker }}</td>
+              <td>{{ row.company_name }}</td>
+              <td class="fund-count">{{ row.fund_count }}</td>
+              {% for fund in fund_columns %}
+                {% if fund.name in row.pct_by_fund %}
+                  <td class="held">{{ row.pct_by_fund[fund.name]|pct }}</td>
+                {% else %}
+                  <td class="not-held">&mdash;</td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">No overlapping positions found yet - run <code>python fetch_filings.py</code> first.</p>
+  {% endif %}
+{% endblock %}

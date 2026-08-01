@@ -1,0 +1,26 @@
+# Render Blueprint - lets you spin this up with "New > Blueprint" on
+# Render's dashboard instead of clicking through every setting by hand.
+# Free plan, no persistent disk: the database is committed to the repo by
+# the scheduled GitHub Action (see .github/workflows/refresh.yml) and
+# ships as part of each deploy, since free web services don't get one.
+services:
+  - type: web
+    name: 13f-tracker
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      # Optional - set these in Render's dashboard (not here) if you want
+      # the site to require a login. Leave unset to keep it open.
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Optional - overrides the email hardcoded in config.py. Only
+      # matters if this app is also making live SEC requests from Render
+      # (it isn't, by default - see README), but harmless to set.
+      - key: SEC_USER_AGENT
+        sync: false

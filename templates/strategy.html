@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}By Strategy - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>Funds By Strategy</h2>
+  <p class="empty">
+    These groupings are not derived from the 13F data - 13F filings only
+    show holdings, not intent. They're our own labels based on each fund's
+    public reputation, just to make it easier to compare funds with a
+    similar style. Groups and funds are both sorted by 13F portfolio
+    value, biggest first.
+  </p>
+
+  {% for group in groups %}
+    <section>
+      <h3>{{ group.focus }} <span class="period">({{ group.funds|length }} fund{{ "s" if group.funds|length != 1 else "" }})</span></h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Fund</th>
+            <th>Known For</th>
+            <th>13F Portfolio Value</th>
+            <th># Holdings</th>
+            <th>As Of</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fund in group.funds %}
+            <tr>
+              <td>
+                {% if fund.period %}
+                  <a href="{{ url_for('positions') }}#fund-{{ fund.cik }}">{{ fund.name }}</a>
+                {% else %}
+                  {{ fund.name }}
+                {% endif %}
+              </td>
+              <td>{{ fund.known_for }}</td>
+              <td>{{ fund.total_value|usd_compact if fund.period else "—" }}</td>
+              <td>{{ fund.holding_count if fund.period else "—" }}</td>
+              <td>{{ fund.period or "no data yet" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endfor %}
+{% endblock %}
