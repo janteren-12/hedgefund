@@ -5,9 +5,12 @@ Run with:  python app.py
 Then open: http://127.0.0.1:5000
 """
 
-from flask import Flask, render_template, request, Response
+from datetime import date
+
+from flask import Flask, render_template, request, Response, send_file
 
 import db
+import export
 import queries
 from config import ADMIN_USERNAME, ADMIN_PASSWORD
 
@@ -102,6 +105,19 @@ def strategy():
     groups = queries.get_funds_by_focus(conn)
     conn.close()
     return render_template("strategy.html", groups=groups)
+
+
+@app.route("/export.xlsx")
+def export_xlsx():
+    conn = db.get_connection()
+    buffer = export.build_workbook(conn)
+    conn.close()
+    return send_file(
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"13f-tracker-{date.today().isoformat()}.xlsx",
+    )
 
 
 if __name__ == "__main__":

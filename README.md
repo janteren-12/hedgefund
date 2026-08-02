@@ -3,9 +3,11 @@
 A small web app that pulls 13F-HR filings from SEC EDGAR for a list of
 hedge funds you choose, stores them in a SQLite database, and shows four
 views: current positions, quarter-over-quarter selling/buying activity,
-cross-fund overlap, and funds grouped by strategy. Runs locally out of the
-box; see [Deploying to Render (free)](#deploying-to-render-free) below if
-you want it reachable from anywhere.
+cross-fund overlap, and funds grouped by strategy. Every view is also
+downloadable as a single Excel workbook ("Download as Excel" in the nav).
+Runs locally out of the box; see
+[Deploying to Render (free)](#deploying-to-render-free) below if you want
+it reachable from anywhere.
 
 ## 1. Install
 
@@ -148,6 +150,7 @@ also trigger it manually any time from your repo's **Actions** tab (the
 | `cusip_lookup.py` | Maps CUSIPs to tickers via OpenFIGI, with caching |
 | `fetch_filings.py` | Refresh script - run this to get new data |
 | `queries.py` | Turns raw data into the four views |
+| `export.py` | Builds the "Download as Excel" workbook |
 | `app.py` | Flask web app (routes + page rendering) |
 | `templates/` | HTML pages |
 | `static/style.css`, `static/app.js` | Styling + scroll/frozen-column behavior |

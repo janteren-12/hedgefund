@@ -27,6 +27,14 @@ nav a:hover {
   text-decoration: underline;
 }
 
+nav a.download-link {
+  color: #1a7a1a;
+}
+
+nav a.download-link::before {
+  content: "\2b07  ";
+}
+
 .last-updated {
   margin: 0.5rem 0 0.25rem;
   font-size: 0.9rem;
