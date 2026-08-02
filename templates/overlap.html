@@ -8,7 +8,11 @@
     the fund name) - not full AUM, since 13F only covers long U.S. equity
     positions. The number in a fund's column is that stock's % of that
     fund's 13F portfolio. A blank cell means that fund doesn't hold the
-    stock.
+    stock. <strong>Weighted Avg %</strong> is the average of the holding
+    funds' percentages, weighted by each fund's own size - a signal of how
+    much collective conviction these funds have, not investment advice
+    (it ignores valuation, correlation between the funds' bets, and that
+    13F data can be up to 45 days stale).
   </p>
 
   {% if rows %}
@@ -19,6 +23,7 @@
             <th>Ticker</th>
             <th>Company</th>
             <th># Funds</th>
+            <th>Weighted Avg %</th>
             {% for fund in fund_columns %}
               <th>{{ fund.name }}<br><span class="fund-total">{{ fund.total_value|usd_compact }}</span></th>
             {% endfor %}
@@ -30,6 +35,7 @@
               <td>{{ row.ticker }}</td>
               <td>{{ row.company_name }}</td>
               <td class="fund-count">{{ row.fund_count }}</td>
+              <td class="weighted-avg">{{ row.weighted_avg_pct|pct }}</td>
               {% for fund in fund_columns %}
                 {% if fund.name in row.pct_by_fund %}
                   <td class="held">{{ row.pct_by_fund[fund.name]|pct }}</td>

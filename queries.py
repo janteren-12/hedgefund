@@ -190,6 +190,15 @@ def get_overlap(conn):
     long-US-equity value, not full AUM (macro/multi-strategy funds can run
     much bigger books than their 13F filing shows).
 
+    Each row also gets "weighted_avg_pct": the average of the holding
+    funds' % of portfolio in that stock, weighted by each fund's own 13F
+    portfolio value - so a big fund's stake counts for more than a small
+    fund's. Equivalent to (combined $ these funds hold in the stock) /
+    (combined $ these funds manage), averaged only across funds that hold
+    it. This is a "how much conviction do these funds have" signal, not
+    investment advice - it ignores valuation, correlation between the
+    funds' bets, and 13F's own staleness (up to 45 days old).
+
     Returns (fund_columns, rows). fund_columns is a list of
     {name, total_value} dicts, one per fund, in that display order. Each
     row has a "pct_by_fund" dict keyed by fund name (funds not holding the
@@ -221,11 +230,21 @@ def get_overlap(conn):
     for cusip, entry in by_cusip.items():
         if len(entry["pct_by_fund"]) < 2:
             continue
+
+        weight_sum = sum(fund_totals[name] for name in entry["pct_by_fund"])
+        weighted_avg_pct = (
+            sum(pct * fund_totals[name] for name, pct in entry["pct_by_fund"].items())
+            / weight_sum
+            if weight_sum
+            else 0
+        )
+
         rows.append(
             {
                 "ticker": _display_ticker(cusip, cusip_map),
                 "company_name": _display_company(cusip, entry["issuer_name"], cusip_map),
                 "fund_count": len(entry["pct_by_fund"]),
+                "weighted_avg_pct": weighted_avg_pct,
                 "pct_by_fund": entry["pct_by_fund"],
             }
         )

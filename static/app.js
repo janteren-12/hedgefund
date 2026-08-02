@@ -36,13 +36,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   freezeLeadingColumns();
   window.addEventListener("resize", freezeLeadingColumns);
+
+  document.querySelectorAll("[data-expand-all]").forEach((btn) => {
+    btn.addEventListener("click", () => setAllDetails(true));
+  });
+  document.querySelectorAll("[data-collapse-all]").forEach((btn) => {
+    btn.addEventListener("click", () => setAllDetails(false));
+  });
 });
 
-// Pins the first few columns of any table.matrix (Ticker, Company, # Funds)
-// in place while the rest scrolls horizontally - like Excel's freeze panes.
-// Uses each column's actual rendered width (rather than a hardcoded pixel
-// value) so it still lines up correctly regardless of content length.
-function freezeLeadingColumns(frozenCount = 3) {
+function setAllDetails(open) {
+  document.querySelectorAll("details").forEach((el) => {
+    el.open = open;
+  });
+}
+
+// Pins the first few columns of any table.matrix (Ticker, Company, #
+// Funds, Weighted Avg %) in place while the rest scrolls horizontally -
+// like Excel's freeze panes. Uses each column's actual rendered width
+// (rather than a hardcoded pixel value) so it still lines up correctly
+// regardless of content length.
+function freezeLeadingColumns(frozenCount = 4) {
   document.querySelectorAll("table.matrix").forEach((table) => {
     const firstRow = table.querySelector("tr");
     if (!firstRow) return;

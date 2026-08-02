@@ -2,12 +2,21 @@
 {% block title %}Current Positions - 13F Tracker{% endblock %}
 {% block content %}
   <h2>Current Positions</h2>
+  <p class="empty">
+    Click a fund's name to expand or collapse its holdings - some funds
+    (Citadel, Renaissance, etc.) hold thousands of positions, so everything
+    starts collapsed.
+    <button type="button" class="link-button" data-expand-all>Expand all</button>
+    &middot;
+    <button type="button" class="link-button" data-collapse-all>Collapse all</button>
+  </p>
 
   {% for fund in funds %}
-    <section id="fund-{{ fund.fund_cik }}">
-      <h3>{{ fund.fund_name }}
-        {% if fund.period %}<span class="period">(as of {{ fund.period }})</span>{% endif %}
-      </h3>
+    <details id="fund-{{ fund.fund_cik }}">
+      <summary>
+        {{ fund.fund_name }}
+        {% if fund.period %}<span class="period">(as of {{ fund.period }}, {{ fund.rows|length }} position{{ "s" if fund.rows|length != 1 else "" }})</span>{% endif %}
+      </summary>
 
       {% if fund.rows %}
         <table>
@@ -33,6 +42,6 @@
       {% else %}
         <p class="empty">No data yet - run <code>python fetch_filings.py</code>.</p>
       {% endif %}
-    </section>
+    </details>
   {% endfor %}
 {% endblock %}
