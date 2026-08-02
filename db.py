@@ -41,21 +41,6 @@ CREATE TABLE IF NOT EXISTS cusip_map (
     company_name TEXT,
     resolved_at TEXT
 );
-
--- Real, verifiable returns for the handful of funds that are genuinely
--- public vehicles (see config.py's "public_ticker" note). Most funds
--- will never have a row here - that's expected, not a bug.
-CREATE TABLE IF NOT EXISTS fund_returns (
-    fund_cik TEXT PRIMARY KEY REFERENCES funds(cik),
-    ticker TEXT NOT NULL,
-    period_start TEXT NOT NULL,
-    period_end TEXT NOT NULL,
-    price_start REAL NOT NULL,
-    price_end REAL NOT NULL,
-    period_return_pct REAL NOT NULL,
-    annualized_return_pct REAL NOT NULL,
-    updated_at TEXT NOT NULL
-);
 """
 
 
@@ -153,26 +138,4 @@ def upsert_cusip_map(conn, cusip, ticker, company_name, resolved_at):
         "ON CONFLICT(cusip) DO UPDATE SET ticker = excluded.ticker, "
         "company_name = excluded.company_name, resolved_at = excluded.resolved_at",
         (cusip, ticker, company_name, resolved_at),
-    )
-
-
-def upsert_fund_return(conn, fund_cik, ticker, period_start, period_end, result, updated_at):
-    conn.execute(
-        "INSERT INTO fund_returns (fund_cik, ticker, period_start, period_end, "
-        "price_start, price_end, period_return_pct, annualized_return_pct, updated_at) "
-        "VALUES (:fund_cik, :ticker, :period_start, :period_end, :price_start, :price_end, "
-        ":period_return_pct, :annualized_return_pct, :updated_at) "
-        "ON CONFLICT(fund_cik) DO UPDATE SET "
-        "ticker = excluded.ticker, period_start = excluded.period_start, "
-        "period_end = excluded.period_end, price_start = excluded.price_start, "
-        "price_end = excluded.price_end, period_return_pct = excluded.period_return_pct, "
-        "annualized_return_pct = excluded.annualized_return_pct, updated_at = excluded.updated_at",
-        {
-            "fund_cik": fund_cik,
-            "ticker": ticker,
-            "period_start": period_start,
-            "period_end": period_end,
-            "updated_at": updated_at,
-            **result,
-        },
     )

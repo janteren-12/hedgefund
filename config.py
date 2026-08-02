@@ -21,15 +21,6 @@ will pad it to 10 digits automatically.
 Note: "focus" is not derived from the 13F data - it's just our own
 label based on each fund's public reputation, since 13F filings only
 show holdings, not strategy or intent.
-
-"public_ticker" (optional): most hedge funds are private and don't
-report real returns anywhere public - only add this for a fund that
-genuinely trades as a public vehicle (e.g. Berkshire Hathaway's BRK-B
-stock, or a listed closed-end fund like Pershing Square Holdings). When
-set, fetch_filings.py pulls real closing prices for that ticker on our
-two stored filing dates and computes a real, verifiable return - not an
-estimate. Leave it out for private funds; the By Strategy page will show
-"Not publicly disclosed" for those instead of a fabricated number.
 """
 
 import os
@@ -45,7 +36,6 @@ FUNDS = [
         "name": "Berkshire Hathaway",
         "focus": "Value / Concentrated Equity",
         "known_for": "Warren Buffett - long-term value investing, concentrated bets",
-        "public_ticker": "BRK-B",
     },
     {
         "cik": "1350694",

@@ -18,6 +18,9 @@
     </nav>
     <p class="last-updated">
       Last updated: {{ last_updated or "never - run fetch_filings.py" }}
+      &middot;
+      Next 13F filing deadline: {{ next_deadline.strftime("%B") }} {{ next_deadline.day }}, {{ next_deadline.year }}
+      (for the quarter ended {{ next_deadline_quarter_end.strftime("%B") }} {{ next_deadline_quarter_end.day }}, {{ next_deadline_quarter_end.year }})
     </p>
     <p class="disclaimer">
       13F data is quarterly and can be delayed up to 45 days after quarter-end.

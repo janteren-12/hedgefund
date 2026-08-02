@@ -3,12 +3,11 @@
 A small web app that pulls 13F-HR filings from SEC EDGAR for a list of
 hedge funds you choose, stores them in a SQLite database, and shows five
 views: current positions, quarter-over-quarter selling/buying activity,
-cross-fund overlap, funds grouped by strategy (including a real,
-market-data-based return for the rare fund that's genuinely public - see
-below), and a biggest-new-bets leaderboard ranked by dollar size. The
-Overlap table is also downloadable as an Excel file. Runs locally out of
-the box; see [Deploying to Vercel (free)](#deploying-to-vercel-free)
-below if you want it reachable from anywhere.
+cross-fund overlap, funds grouped by strategy, and a biggest-new-bets
+leaderboard ranked by dollar size. The Overlap table is also downloadable
+as an Excel file. Runs locally out of the box; see
+[Deploying to Vercel (free)](#deploying-to-vercel-free) below if you want
+it reachable from anywhere.
 
 ## 1. Install
 
@@ -54,6 +53,11 @@ It only downloads filings it doesn't already have, and automatically drops
 the oldest quarter once a new one comes in, so the database always holds
 the latest two quarters per fund.
 
+Every page shows the next 13F filing deadline (45 calendar days after
+each quarter-end, pushed to the next business day if that lands on a
+weekend - see `filing_calendar.py`) next to "Last updated," so you know
+roughly when to expect fresh filings instead of just guessing.
+
 ## Adding more funds
 
 Edit the `FUNDS` list in `config.py`:
@@ -77,29 +81,6 @@ To find a fund's CIK number:
 
 Then re-run `python fetch_filings.py`. Removing a fund from the list also
 removes its data from the database next time you run the refresh script.
-
-## Annualized returns ("By Strategy" page)
-
-13F filings don't report a fund's actual performance - no NAV, no P&L,
-just holdings. So instead of guessing or scraping unreliable numbers off
-the internet, this only shows a return for a fund when there's a real,
-verifiable, freely-available price to compute it from: a `"public_ticker"`
-in `config.py` (currently just Berkshire Hathaway's `BRK-B` - it's a
-public stock, so its price *is* a real return, not an estimate). For that
-handful of funds, `fetch_filings.py` pulls real closing prices from Yahoo
-Finance's free chart API on our two stored filing dates and computes:
-
-- the real price return between those two dates
-- that same return compounded up to an annual rate (one quarter's move
-  blown up ^4 - a genuine number, but noisy, not a multi-year track
-  record)
-
-Every other fund - the vast majority - is privately held and under no
-obligation to disclose returns anywhere public, so it just shows "Not
-publicly disclosed" rather than a fabricated figure. If you know of
-another fund in your list that trades as a real public vehicle (e.g. a
-listed closed-end fund that publishes NAV, like Pershing Square
-Holdings), you can add its ticker the same way Berkshire's is set up.
 
 ## Deploying to Vercel (free)
 
@@ -181,7 +162,7 @@ the repo unused, or you can remove it.)
 | `db.py` | SQLite schema and data access helpers |
 | `edgar.py` | Talks to SEC EDGAR (rate-limited) |
 | `cusip_lookup.py` | Maps CUSIPs to tickers via OpenFIGI, with caching |
-| `market_data.py` | Real stock prices for funds with a "public_ticker" set (Yahoo Finance) |
+| `filing_calendar.py` | Computes the next 13F filing deadline (pure date math) |
 | `fetch_filings.py` | Refresh script - run this to get new data |
 | `queries.py` | Turns raw data into the five views |
 | `export.py` | Builds the Overlap page's "Download as Excel" file |

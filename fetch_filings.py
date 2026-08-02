@@ -20,7 +20,6 @@ from datetime import datetime, timezone
 import cusip_lookup
 import db
 import edgar
-import market_data
 from config import FUNDS
 
 
@@ -82,30 +81,6 @@ def main():
         keep = {f["accession_no"] for f in latest_filings}
         db.prune_old_filings(conn, cik, keep)
         conn.commit()
-
-        ticker = fund.get("public_ticker")
-        if ticker and len(latest_filings) >= 2:
-            period_start = latest_filings[1]["period_of_report"]
-            period_end = latest_filings[0]["period_of_report"]
-            print(f"  Fetching real {ticker} price return ({period_start} -> {period_end})...")
-            try:
-                result = market_data.compute_return(ticker, period_start, period_end)
-            except Exception as exc:
-                result = None
-                print(f"    Could not fetch price data: {exc}")
-
-            if result:
-                db.upsert_fund_return(
-                    conn,
-                    cik,
-                    ticker,
-                    period_start,
-                    period_end,
-                    result,
-                    datetime.now(timezone.utc).isoformat(),
-                )
-                conn.commit()
-                print(f"    Annualized return: {result['annualized_return_pct']:+.1f}%")
 
     if all_new_cusips:
         print()

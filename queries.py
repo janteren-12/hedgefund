@@ -299,25 +299,15 @@ def get_funds_by_focus(conn):
     reveal strategy, only holdings). Groups are sorted by their combined
     13F portfolio value, descending; funds within a group are sorted the
     same way.
-
-    Each fund also carries "annualized_return_pct": real data (computed
-    from actual market prices) for the rare fund that's a genuine public
-    vehicle, or None for everyone else - which is most funds, since
-    hedge funds aren't required to disclose returns publicly. None means
-    "not publicly available," not "zero."
     """
     meta_by_cik = {f["cik"]: f for f in CONFIG_FUNDS}
     funds, latest = _latest_filing_per_fund(conn)
-    returns_by_cik = {
-        row["fund_cik"]: row for row in conn.execute("SELECT * FROM fund_returns").fetchall()
-    }
 
     groups = {}
     for fund in funds:
         meta = meta_by_cik.get(fund["cik"], {})
         focus = meta.get("focus") or "Uncategorized"
         filing = latest.get(fund["cik"])
-        fund_return = returns_by_cik.get(fund["cik"])
 
         total_value, holding_count, period = 0, 0, None
         if filing:
@@ -336,10 +326,6 @@ def get_funds_by_focus(conn):
                 "total_value": total_value,
                 "holding_count": holding_count,
                 "period": period,
-                "annualized_return_pct": fund_return["annualized_return_pct"]
-                if fund_return
-                else None,
-                "return_ticker": fund_return["ticker"] if fund_return else None,
             }
         )
 

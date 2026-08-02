@@ -9,16 +9,6 @@
     similar style. Groups and funds are both sorted by 13F portfolio
     value, biggest first.
   </p>
-  <p class="empty">
-    <strong>Est. Annualized Return</strong> is real market data (from the
-    fund's actual public stock/share price) for the rare fund that trades
-    publicly - most hedge funds are private and aren't required to
-    disclose returns anywhere, so those show "Not publicly disclosed"
-    rather than a guessed number. Where a return does show, it's one
-    quarter's real price move compounded up to an annual rate - a genuine
-    number, but based on a single quarter, so treat it as noisy, not a
-    multi-year track record.
-  </p>
 
   {% for group in groups %}
     <section>
@@ -32,7 +22,6 @@
             <th>13F Portfolio Value</th>
             <th># Holdings</th>
             <th>As Of</th>
-            <th>Est. Annualized Return</th>
           </tr>
         </thead>
         <tbody>
@@ -49,14 +38,6 @@
               <td>{{ fund.total_value|usd_compact if fund.period else "—" }}</td>
               <td>{{ fund.holding_count if fund.period else "—" }}</td>
               <td>{{ fund.period or "no data yet" }}</td>
-              <td>
-                {% if fund.annualized_return_pct is not none %}
-                  {{ fund.annualized_return_pct|pct_change }}
-                  <span class="fund-total">(real, {{ fund.return_ticker }})</span>
-                {% else %}
-                  <span class="empty">Not publicly disclosed</span>
-                {% endif %}
-              </td>
             </tr>
           {% endfor %}
         </tbody>

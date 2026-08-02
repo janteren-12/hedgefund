@@ -11,6 +11,7 @@ from flask import Flask, render_template, request, Response, send_file
 
 import db
 import export
+import filing_calendar
 import queries
 from config import ADMIN_USERNAME, ADMIN_PASSWORD
 
@@ -72,7 +73,12 @@ def inject_last_updated():
     conn = db.get_connection()
     last_updated = queries.get_last_updated(conn)
     conn.close()
-    return {"last_updated": last_updated}
+    next_deadline, next_deadline_quarter_end = filing_calendar.upcoming_deadlines(count=1)[0]
+    return {
+        "last_updated": last_updated,
+        "next_deadline": next_deadline,
+        "next_deadline_quarter_end": next_deadline_quarter_end,
+    }
 
 
 @app.route("/")
