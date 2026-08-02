@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Overlap - 13F Tracker{% endblock %}
 {% block content %}
-  <h2>Overlap: Who Holds What</h2>
+  <h2>Overlap: Who Holds What
+    <a href="{{ url_for('export_overlap_xlsx') }}" class="download-link">Download as Excel</a>
+  </h2>
   <p class="empty">
     Each row is a stock held by 2 or more tracked funds. Each column is a
     fund, ordered biggest to smallest by 13F portfolio value (shown under

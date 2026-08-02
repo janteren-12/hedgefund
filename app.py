@@ -107,16 +107,16 @@ def strategy():
     return render_template("strategy.html", groups=groups)
 
 
-@app.route("/export.xlsx")
-def export_xlsx():
+@app.route("/overlap.xlsx")
+def export_overlap_xlsx():
     conn = db.get_connection()
-    buffer = export.build_workbook(conn)
+    buffer = export.build_overlap_workbook(conn)
     conn.close()
     return send_file(
         buffer,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name=f"13f-tracker-{date.today().isoformat()}.xlsx",
+        download_name=f"13f-overlap-{date.today().isoformat()}.xlsx",
     )
 
 

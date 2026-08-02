@@ -27,11 +27,20 @@ nav a:hover {
   text-decoration: underline;
 }
 
-nav a.download-link {
+.download-link {
   color: #1a7a1a;
+  font-size: 1rem;
+  font-weight: normal;
+  text-decoration: none;
+  margin-left: 1rem;
+  vertical-align: middle;
 }
 
-nav a.download-link::before {
+.download-link:hover {
+  text-decoration: underline;
+}
+
+.download-link::before {
   content: "\2b07  ";
 }
 

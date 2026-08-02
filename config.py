@@ -158,7 +158,11 @@ FUNDS = [
 # Leave blank to use the free, unauthenticated (slower) rate limit.
 OPENFIGI_API_KEY = ""
 
-DB_PATH = "data/filings.db"
+# Anchored to this file's own location (not the process's working
+# directory) so it resolves the same way locally, on Render, and on
+# Vercel, regardless of where each one happens to run the app from.
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.environ.get("DB_PATH", os.path.join(_BASE_DIR, "data", "filings.db"))
 
 # Optional: if you deploy this somewhere public (e.g. Render) and want to
 # keep it private, set both of these (as environment variables on the
