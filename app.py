@@ -107,6 +107,14 @@ def strategy():
     return render_template("strategy.html", groups=groups)
 
 
+@app.route("/new-bets")
+def new_bets():
+    conn = db.get_connection()
+    leaderboard = queries.get_new_bets_leaderboard(conn)
+    conn.close()
+    return render_template("new_bets.html", leaderboard=leaderboard)
+
+
 @app.route("/overlap.xlsx")
 def export_overlap_xlsx():
     conn = db.get_connection()

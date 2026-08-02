@@ -108,6 +108,7 @@ def get_selling_buying_by_fund(conn):
         if len(filings) < 2:
             results.append(
                 {
+                    "fund_cik": fund["cik"],
                     "fund_name": fund["name"],
                     "have_comparison": False,
                     "latest_period": filings[0]["period_of_report"] if filings else None,
@@ -128,6 +129,7 @@ def get_selling_buying_by_fund(conn):
 
         latest_h = holdings_by_cusip(latest_filing["id"])
         previous_h = holdings_by_cusip(previous_filing["id"])
+        latest_total = sum(r["value_usd"] for r in latest_h.values()) or 1
 
         reduced, increased = [], []
         for cusip in set(latest_h) | set(previous_h):
@@ -140,11 +142,14 @@ def get_selling_buying_by_fund(conn):
                 continue
 
             issuer_name = (latest_row or prev_row)["issuer_name"]
+            value_usd = latest_row["value_usd"] if latest_row else 0
             entry = {
                 "ticker": _display_ticker(cusip, cusip_map),
                 "company_name": _display_company(cusip, issuer_name, cusip_map),
                 "shares_previous": prev_shares,
                 "shares_latest": latest_shares,
+                "value_usd": value_usd,
+                "pct_of_portfolio": value_usd / latest_total * 100,
             }
 
             if latest_shares < prev_shares:
@@ -165,6 +170,7 @@ def get_selling_buying_by_fund(conn):
 
         results.append(
             {
+                "fund_cik": fund["cik"],
                 "fund_name": fund["name"],
                 "have_comparison": True,
                 "latest_period": latest_filing["period_of_report"],
@@ -175,6 +181,33 @@ def get_selling_buying_by_fund(conn):
         )
 
     return results
+
+
+def get_new_bets_leaderboard(conn):
+    """
+    Every brand-new position (a fund reporting a stock this quarter that
+    it didn't hold last quarter) across all tracked funds, ranked by
+    dollar size rather than % of portfolio - a different cut from the
+    Selling & Buying page: a giant fund's $2B new stake might be 0.3% of
+    its book but still a much bigger real commitment than a $50M position
+    somewhere else. % of portfolio is included alongside for context.
+    """
+    leaderboard = [
+        {
+            "fund_cik": fund["fund_cik"],
+            "fund_name": fund["fund_name"],
+            "ticker": entry["ticker"],
+            "company_name": entry["company_name"],
+            "value_usd": entry["value_usd"],
+            "pct_of_portfolio": entry["pct_of_portfolio"],
+            "period": fund["latest_period"],
+        }
+        for fund in get_selling_buying_by_fund(conn)
+        for entry in fund["increased"]
+        if entry.get("is_new")
+    ]
+    leaderboard.sort(key=lambda r: r["value_usd"], reverse=True)
+    return leaderboard
 
 
 def get_overlap(conn):

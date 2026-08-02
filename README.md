@@ -1,14 +1,14 @@
 # 13F Hedge Fund Tracker
 
 A small web app that pulls 13F-HR filings from SEC EDGAR for a list of
-hedge funds you choose, stores them in a SQLite database, and shows four
+hedge funds you choose, stores them in a SQLite database, and shows five
 views: current positions, quarter-over-quarter selling/buying activity,
-cross-fund overlap, and funds grouped by strategy (including a real,
+cross-fund overlap, funds grouped by strategy (including a real,
 market-data-based return for the rare fund that's genuinely public - see
-below). The Overlap table is also downloadable as an Excel file. Runs
-locally out of the box; see
-[Deploying to Vercel (free)](#deploying-to-vercel-free) below if you want
-it reachable from anywhere.
+below), and a biggest-new-bets leaderboard ranked by dollar size. The
+Overlap table is also downloadable as an Excel file. Runs locally out of
+the box; see [Deploying to Vercel (free)](#deploying-to-vercel-free)
+below if you want it reachable from anywhere.
 
 ## 1. Install
 
@@ -183,7 +183,7 @@ the repo unused, or you can remove it.)
 | `cusip_lookup.py` | Maps CUSIPs to tickers via OpenFIGI, with caching |
 | `market_data.py` | Real stock prices for funds with a "public_ticker" set (Yahoo Finance) |
 | `fetch_filings.py` | Refresh script - run this to get new data |
-| `queries.py` | Turns raw data into the four views |
+| `queries.py` | Turns raw data into the five views |
 | `export.py` | Builds the Overlap page's "Download as Excel" file |
 | `app.py` | Flask web app (routes + page rendering) |
 | `templates/` | HTML pages |

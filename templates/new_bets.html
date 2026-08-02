@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Biggest New Bets - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>Biggest New-Dollar Bets</h2>
+  <p class="empty">
+    Every brand-new position across all tracked funds - a stock a fund
+    reported this quarter that it didn't hold last quarter - ranked by
+    dollar size rather than % of portfolio. A giant fund's $2B new stake
+    might be a small slice of its own book but still a much bigger real
+    commitment than a $50M position elsewhere, so this surfaces those
+    differently than the Selling &amp; Buying Activity page does.
+  </p>
+
+  {% if leaderboard %}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Fund</th>
+          <th>Ticker</th>
+          <th>Company</th>
+          <th>Position Value</th>
+          <th>% of Fund's Portfolio</th>
+          <th>As Of</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for bet in leaderboard %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td><a href="{{ url_for('positions') }}#fund-{{ bet.fund_cik }}">{{ bet.fund_name }}</a></td>
+            <td>{{ bet.ticker }}</td>
+            <td>{{ bet.company_name }}</td>
+            <td>{{ bet.value_usd|usd }}</td>
+            <td>{{ bet.pct_of_portfolio|pct }}</td>
+            <td>{{ bet.period }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">
+      No new positions to compare yet - either there's only one quarter of
+      data stored so far, or run <code>python fetch_filings.py</code> to
+      check for new filings.
+    </p>
+  {% endif %}
+{% endblock %}
