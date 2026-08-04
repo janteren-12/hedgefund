@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Ownership Stakes - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>5%+ Ownership Stakes</h2>
+  <p class="empty">
+    Schedule 13D and 13G filings, separate from 13F: a fund has to file
+    one whenever it crosses (or materially changes) beneficial ownership
+    of <strong>5% of a single company's stock</strong> - unrelated to
+    13F's $100M-total-portfolio threshold, and unrelated to 10% (a common
+    mix-up, since 10% ownership triggers different rules around insider
+    trading and short-swing profits). <strong>13D</strong> means the filer
+    may seek to influence or control the company (the classic activist
+    filing); <strong>13G</strong> is the same 5% threshold but declares no
+    such intent. Each row is one filing - a fund with an existing stake
+    that later amends it (buying more, selling down, changing intent) will
+    show multiple rows for the same company, letting you see the stake's
+    history.
+  </p>
+  <p class="empty">
+    Only filings from <strong>{{ since }}</strong> onward are shown: SEC
+    only required these to be filed in a structured, machine-readable
+    format starting then, and older free-text filings aren't reliably
+    parseable. If nothing shows up below for a fund, it simply hasn't
+    crossed a new 5% threshold or amended an existing one since that date -
+    it doesn't mean the fund holds no concentrated stakes at all.
+    <button type="button" class="link-button" data-expand-all>Expand all</button>
+    &middot;
+    <button type="button" class="link-button" data-collapse-all>Collapse all</button>
+  </p>
+
+  <div class="filter-bar">
+    <span>Show:</span>
+    <label><input type="radio" name="filing-type" value="all" checked> All</label>
+    <label><input type="radio" name="filing-type" value="13D"> 13D only</label>
+    <label><input type="radio" name="filing-type" value="13G"> 13G only</label>
+    <span id="filing-type-description" class="filter-description"></span>
+  </div>
+
+  {% for fund in funds %}
+    <details id="fund-ownership-{{ fund.fund_cik }}" data-ownership-fund data-since="{{ since }}">
+      <summary>
+        {{ fund.fund_name }}
+        <span class="period" data-filing-count-text>({{ fund.filings|length }} filing{{ "s" if fund.filings|length != 1 else "" }} since {{ since }})</span>
+      </summary>
+
+      {% if fund.filings %}
+        <table>
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Type</th>
+              <th>% of Class</th>
+              <th>Shares</th>
+              <th>Event Date</th>
+              <th>Filed</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in fund.filings %}
+              <tr data-filing-type="{{ f.type }}">
+                <td>{{ f.issuer_name }}{% if f.ticker %} ({{ f.ticker }}){% endif %}</td>
+                <td>{{ f.form }}</td>
+                <td>{{ f.pct_of_class|pct }}</td>
+                <td>{{ f.shares|shares }}</td>
+                <td>{{ f.event_date or "—" }}</td>
+                <td>{{ f.filed_date }}</td>
+                <td><a href="{{ f.sec_url }}" target="_blank" rel="noopener">View on SEC.gov</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">No 5%+ ownership filings from this fund since {{ since }}.</p>
+      {% endif %}
+    </details>
+  {% endfor %}
+{% endblock %}

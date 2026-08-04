@@ -13,6 +13,10 @@
       <a href="{{ url_for('positions') }}">Current Positions</a>
       <a href="{{ url_for('selling') }}">Selling &amp; Buying Activity</a>
       <a href="{{ url_for('overlap') }}">Overlap</a>
+      <a href="{{ url_for('momentum') }}">Momentum</a>
+      <a href="{{ url_for('history') }}">Position History</a>
+      <a href="{{ url_for('ownership') }}">Ownership Stakes</a>
+      <a href="{{ url_for('insiders') }}">Insider Activity</a>
       <a href="{{ url_for('strategy') }}">By Strategy</a>
       <a href="{{ url_for('new_bets') }}">Biggest New Bets</a>
     </nav>
@@ -32,5 +36,8 @@
   <main>
     {% block content %}{% endblock %}
   </main>
+  <footer>
+    <a href="{{ url_for('privacy') }}">Privacy &amp; Disclaimer</a>
+  </footer>
 </body>
 </html>

@@ -2,14 +2,22 @@
 {% block title %}Selling & Buying Activity - 13F Tracker{% endblock %}
 {% block content %}
   <h2>Selling &amp; Buying Activity</h2>
+  <p class="empty">
+    Click a fund's name to expand or collapse its activity - some funds
+    trade thousands of positions a quarter, so everything starts collapsed.
+    <button type="button" class="link-button" data-expand-all>Expand all</button>
+    &middot;
+    <button type="button" class="link-button" data-collapse-all>Collapse all</button>
+  </p>
 
   {% for fund in funds %}
-    <section>
-      <h3>{{ fund.fund_name }}
+    <details id="fund-selling-{{ fund.fund_cik }}">
+      <summary>
+        {{ fund.fund_name }}
         {% if fund.have_comparison %}
-          <span class="period">({{ fund.previous_period }} &rarr; {{ fund.latest_period }})</span>
+          <span class="period">({{ fund.previous_period }} &rarr; {{ fund.latest_period }}, {{ fund.reduced|length }} reduced/exited, {{ fund.increased|length }} new/increased)</span>
         {% endif %}
-      </h3>
+      </summary>
 
       {% if not fund.have_comparison %}
         <p class="empty">Only one filing stored so far - need two quarters to compare.</p>
@@ -74,6 +82,6 @@
           <p class="empty">No new buys or increases this quarter.</p>
         {% endif %}
       {% endif %}
-    </section>
+    </details>
   {% endfor %}
 {% endblock %}

@@ -13,7 +13,14 @@ import db
 import export
 import filing_calendar
 import queries
-from config import ADMIN_USERNAME, ADMIN_PASSWORD
+from config import (
+    ADMIN_USERNAME,
+    ADMIN_PASSWORD,
+    INSIDER_FILINGS_WINDOW_DAYS,
+    INSIDER_TRACKING_TOP_N,
+    OWNERSHIP_FILINGS_SINCE,
+    QUARTERS_TO_KEEP,
+)
 
 app = Flask(__name__)
 
@@ -38,7 +45,17 @@ def require_login_if_configured():
 
 @app.template_filter("usd")
 def format_usd(value):
+    if value is None:
+        return "—"
     return f"${value:,.0f}"
+
+
+@app.template_filter("usd2")
+def format_usd2(value):
+    """Like |usd but keeps cents - for per-share prices, where whole-dollar rounding loses meaning."""
+    if value is None:
+        return "—"
+    return f"${value:,.2f}"
 
 
 @app.template_filter("pct")
@@ -57,7 +74,9 @@ def format_pct_change(value):
 
 @app.template_filter("shares")
 def format_shares(value):
-    return f"{value:,}"
+    if value is None:
+        return "—"
+    return f"{int(value):,}"
 
 
 @app.template_filter("usd_compact")
@@ -111,6 +130,48 @@ def strategy():
     groups = queries.get_funds_by_focus(conn)
     conn.close()
     return render_template("strategy.html", groups=groups)
+
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
+@app.route("/ownership")
+def ownership():
+    conn = db.get_connection()
+    funds = queries.get_ownership_filings_by_fund(conn)
+    conn.close()
+    return render_template("ownership.html", funds=funds, since=OWNERSHIP_FILINGS_SINCE)
+
+
+@app.route("/insiders")
+def insiders():
+    conn = db.get_connection()
+    companies = queries.get_insider_activity(conn)
+    conn.close()
+    return render_template(
+        "insiders.html",
+        companies=companies,
+        top_n=INSIDER_TRACKING_TOP_N,
+        window_days=INSIDER_FILINGS_WINDOW_DAYS,
+    )
+
+
+@app.route("/momentum")
+def momentum():
+    conn = db.get_connection()
+    fund_columns, rows = queries.get_momentum_matrix(conn)
+    conn.close()
+    return render_template("momentum.html", fund_columns=fund_columns, rows=rows)
+
+
+@app.route("/history")
+def history():
+    conn = db.get_connection()
+    funds = queries.get_position_history_by_fund(conn)
+    conn.close()
+    return render_template("history.html", funds=funds, quarters_to_keep=QUARTERS_TO_KEEP)
 
 
 @app.route("/new-bets")

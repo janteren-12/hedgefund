@@ -220,9 +220,67 @@ table.matrix tbody tr:nth-child(even) .sticky-col {
   background: #fafafa;
 }
 
-table.matrix th.sticky-col:nth-child(4),
-table.matrix td.sticky-col:nth-child(4) {
+table.matrix:not(.history) th.sticky-col:nth-child(4),
+table.matrix:not(.history) td.sticky-col:nth-child(4) {
   box-shadow: 3px 0 4px -2px rgba(0, 0, 0, 0.35);
+}
+
+/* Position History's matrix only freezes Ticker + Company (2 columns),
+   so its divider shadow and centered-column start shift in by 2. */
+table.matrix.history th.sticky-col:nth-child(2),
+table.matrix.history td.sticky-col:nth-child(2) {
+  box-shadow: 3px 0 4px -2px rgba(0, 0, 0, 0.35);
+}
+
+table.matrix.history th:nth-child(n+3),
+table.matrix.history td:nth-child(n+3) {
+  text-align: center;
+}
+
+/* Momentum's matrix freezes Ticker, Company, # Funds (3 columns), so its
+   divider shadow sits after column 3 instead of Overlap's column 4. */
+table.matrix.momentum th.sticky-col:nth-child(3),
+table.matrix.momentum td.sticky-col:nth-child(3) {
+  box-shadow: 3px 0 4px -2px rgba(0, 0, 0, 0.35);
+}
+
+table.matrix.momentum td.change-increase,
+table.matrix.momentum td.change-new {
+  background: #e4f0e0;
+  color: #1a7a1a;
+  font-weight: bold;
+}
+
+table.matrix.momentum td.change-decrease,
+table.matrix.momentum td.change-sold_out {
+  background: #f8e6e6;
+  color: #a51c1c;
+  font-weight: bold;
+}
+
+table.matrix.momentum .tag {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.tag-sample {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.tag-sample.change-increase,
+.tag-sample.change-new {
+  background: #e4f0e0;
+  color: #1a7a1a;
+}
+
+.tag-sample.change-decrease,
+.tag-sample.change-sold_out {
+  background: #f8e6e6;
+  color: #a51c1c;
 }
 
 table.matrix td.weighted-avg {
@@ -234,8 +292,53 @@ table.matrix td.weighted-avg {
   font-style: italic;
 }
 
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f8f8f8;
+}
+
+.filter-bar label {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filter-description {
+  font-size: 0.85rem;
+  color: #555;
+  font-style: italic;
+}
+
+/* tbody-scoped (matching the specificity of the tbody tr:nth-child(even)
+   zebra-stripe rule above, and defined after it) so these colors always
+   win instead of being silently overridden on even rows. */
+tbody tr.txn-acquired {
+  background: #e4f0e0;
+}
+
+tbody tr.txn-disposed {
+  background: #f8e6e6;
+}
+
 code {
   background: #f0f0f0;
   padding: 0.1rem 0.35rem;
   border-radius: 3px;
+}
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+  font-size: 0.85rem;
+}
+
+footer a {
+  color: #666;
 }

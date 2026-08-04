@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Privacy & Disclaimer - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>Privacy &amp; Disclaimer</h2>
+
+  <h3>Privacy</h3>
+  <p>
+    This app doesn't collect, store, or share any personal information
+    about you. There are no user accounts, no cookies, and no analytics
+    or third-party trackers of any kind.
+  </p>
+  <p>
+    If this app is deployed on a hosting service (e.g. Vercel), that
+    service may keep its own standard infrastructure logs (such as request
+    IP addresses) as part of running any website - that's the hosting
+    provider's own logging, not something this app adds, reads, or
+    controls.
+  </p>
+
+  <h3>Data &amp; Disclaimer</h3>
+  <p>
+    Every number in this app comes from public filings on
+    <a href="https://www.sec.gov/edgar" target="_blank" rel="noopener">SEC EDGAR</a>
+    - 13F-HR quarterly holdings reports and Schedule 13D/13G beneficial
+    ownership filings. Nothing here is scraped from a paywalled source or
+    independently verified beyond the parsing logic described in this
+    project's README.
+  </p>
+  <p>
+    This is not investment advice. The underlying data is inherently
+    delayed by design: 13F filings can lag up to 45 days after each
+    quarter-end, and 13D/13G filings only appear when a fund crosses (or
+    materially changes) a 5% ownership threshold in some company - not in
+    real time. 13F also only covers long U.S. equity positions, not a
+    fund's full portfolio (no shorts, cash, bonds, derivatives, or
+    non-U.S. holdings).
+  </p>
+  <p>
+    Provided as-is, with no warranty of accuracy or completeness, for
+    personal informational use.
+  </p>
+{% endblock %}

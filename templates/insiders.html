@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Insider Activity - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>Insider Activity</h2>
+  <p class="empty">
+    A different disclosure regime from everywhere else in this app: Form
+    3/4/5 filings are made by a <strong>company's own officers, directors,
+    and 10%+ owners</strong> reporting their personal trades in that
+    company's stock - not by any of your tracked hedge funds. Scoped to
+    the <strong>top {{ top_n }} stocks</strong> your tracked funds hold
+    most widely (the same ranking Overlap uses), covering the last
+    <strong>{{ window_days }} days</strong> - insider trading is far
+    higher-frequency than 13F/13D/13G, so this is a rolling window, not
+    full history.
+  </p>
+  <p class="empty">
+    Only trades in actual common stock are shown, not option/RSU activity.
+    Every transaction is labeled with what it actually is - most Form 4s
+    are routine compensation events (grants, tax withholding, option
+    exercises), not a genuine market decision, so "insider sold" isn't
+    always what it sounds like. Use the filter below to cut straight to
+    real open-market buys and sells.
+    <button type="button" class="link-button" data-expand-all>Expand all</button>
+    &middot;
+    <button type="button" class="link-button" data-collapse-all>Collapse all</button>
+  </p>
+
+  <div class="filter-bar">
+    <span>Show:</span>
+    <label><input type="radio" name="insider-filter" value="all" checked> All transactions</label>
+    <label><input type="radio" name="insider-filter" value="open-market"> Open market buys/sells only</label>
+    <span id="insider-filter-description" class="filter-description"></span>
+  </div>
+
+  {% for company in companies %}
+    <details id="insider-{{ company.ticker }}" data-insider-company data-fund-suffix="held by {{ company.fund_count }} tracked fund{{ 's' if company.fund_count != 1 else '' }}">
+      <summary>
+        {{ company.issuer_name }}{% if company.ticker %} ({{ company.ticker }}){% endif %}
+        <span class="period" data-insider-count-text>({{ company.transactions|length }} transaction{{ "s" if company.transactions|length != 1 else "" }}, held by {{ company.fund_count }} tracked fund{{ "s" if company.fund_count != 1 else "" }})</span>
+      </summary>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Insider</th>
+            <th>Role</th>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Shares</th>
+            <th>Price</th>
+            <th>Shares Owned After</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in company.transactions %}
+            <tr data-open-market="{{ t.is_open_market|lower }}" class="{{ 'txn-acquired' if t.acquired_disposed == 'A' else 'txn-disposed' if t.acquired_disposed == 'D' else '' }}">
+              <td>{{ t.owner_name }}</td>
+              <td>{{ t.role }}</td>
+              <td>{{ t.transaction_date }}</td>
+              <td>{{ t.code_label }} ({{ t.code }})</td>
+              <td>{{ t.shares|shares }}{% if t.acquired_disposed == 'A' %} acquired{% elif t.acquired_disposed == 'D' %} disposed{% endif %}</td>
+              <td>{{ t.price_per_share|usd2 }}</td>
+              <td>{{ t.shares_owned_after|shares }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+  {% endfor %}
+
+  {% if not companies %}
+    <p class="empty">No insider activity stored yet - run <code>python fetch_filings.py</code> first.</p>
+  {% endif %}
+{% endblock %}

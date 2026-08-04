@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Position History - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>Position History</h2>
+  <p class="empty">
+    For each fund, share count held in every stored quarter (oldest to
+    newest, left to right) - a longer view than Selling &amp; Buying's
+    single quarter-over-quarter comparison, useful for spotting a position
+    a fund has been steadily building or trimming over several quarters.
+    Share count is shown rather than dollar value, since value can rise or
+    fall purely from price movement even when a fund hasn't traded at all.
+    Up to {{ quarters_to_keep }} quarters are kept per fund (see
+    <code>QUARTERS_TO_KEEP</code> in <code>config.py</code>) - funds you've
+    only just started tracking will show fewer until more quarters are
+    fetched over time.
+    <button type="button" class="link-button" data-expand-all>Expand all</button>
+    &middot;
+    <button type="button" class="link-button" data-collapse-all>Collapse all</button>
+  </p>
+
+  {% for fund in funds %}
+    <details id="fund-history-{{ fund.fund_cik }}">
+      <summary>
+        {{ fund.fund_name }}
+        {% if fund.periods|length > 1 %}
+          <span class="period">({{ fund.periods|length }} quarters stored: {{ fund.periods[0] }} to {{ fund.periods[-1] }})</span>
+        {% elif fund.periods %}
+          <span class="period">(only 1 quarter stored so far - check back next quarter)</span>
+        {% else %}
+          <span class="period">(no data yet)</span>
+        {% endif %}
+      </summary>
+
+      {% if fund.rows %}
+        <div class="table-scroll">
+          <table class="matrix history">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Company</th>
+                {% for period in fund.periods %}
+                  <th>{{ period }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in fund.rows %}
+                <tr>
+                  <td>{{ row.ticker }}</td>
+                  <td>{{ row.company_name }}</td>
+                  {% for period in fund.periods %}
+                    {% if period in row.shares_by_period %}
+                      <td class="held">{{ row.shares_by_period[period]|shares }}</td>
+                    {% else %}
+                      <td class="not-held">&mdash;</td>
+                    {% endif %}
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty">Not enough history yet for a trend - only one quarter stored so far.</p>
+      {% endif %}
+    </details>
+  {% endfor %}
+{% endblock %}

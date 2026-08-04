@@ -1,11 +1,18 @@
 # 13F Hedge Fund Tracker
 
 A small web app that pulls 13F-HR filings from SEC EDGAR for a list of
-hedge funds you choose, stores them in a SQLite database, and shows five
+hedge funds you choose, stores them in a SQLite database, and shows nine
 views: current positions, quarter-over-quarter selling/buying activity,
-cross-fund overlap, funds grouped by strategy, and a biggest-new-bets
-leaderboard ranked by dollar size. The Overlap table is also downloadable
-as an Excel file. Runs locally out of the box; see
+cross-fund overlap, a momentum matrix (Overlap's grid, but showing each
+fund's portfolio-weight change instead of the weight itself), multi-quarter
+position history, 5%+ ownership stakes (Schedule 13D/13G, separate from
+13F), insider buying/selling (Form 3/4/5, filed by a company's own
+officers/directors/10%+ owners - a different disclosure regime again) for
+the stocks your funds hold most widely, funds grouped by strategy, and a
+biggest-new-bets leaderboard ranked by dollar size. The Overlap table is
+also downloadable as an Excel file. A Privacy & Disclaimer page (linked in
+the footer of every page) explains what data this collects (nothing) and
+where the numbers come from. Runs locally out of the box; see
 [Deploying to Vercel (free)](#deploying-to-vercel-free) below if you want
 it reachable from anywhere.
 
@@ -28,10 +35,11 @@ requires this on every request - it's not a login, just a courtesy header.
 python fetch_filings.py
 ```
 
-This pulls the two most recent 13F-HR filings for every fund listed in
-`config.py`, plus ticker symbols for the stocks held (via the free OpenFIGI
-API). It prints progress as it goes. It can take a few minutes the first
-time, mostly because of the polite delays between SEC requests.
+This pulls the `QUARTERS_TO_KEEP` most recent 13F-HR filings (6 by
+default - a year and a half) for every fund listed in `config.py`, plus
+ticker symbols for the stocks held (via the free OpenFIGI API). It prints
+progress as it goes. It can take a few minutes the first time, mostly
+because of the polite delays between SEC requests.
 
 ## 4. Run the app
 
@@ -51,7 +59,10 @@ python fetch_filings.py
 
 It only downloads filings it doesn't already have, and automatically drops
 the oldest quarter once a new one comes in, so the database always holds
-the latest two quarters per fund.
+the latest `QUARTERS_TO_KEEP` quarters per fund (see `config.py` to change
+that number - the Selling & Buying page always compares only the newest
+two regardless of how many are kept, but Position History uses all of
+them).
 
 Every page shows the next 13F filing deadline (45 calendar days after
 each quarter-end, pushed to the next business day if that lands on a
@@ -153,6 +164,26 @@ the repo unused, or you can remove it.)
 - If OpenFIGI can't map a CUSIP to a ticker, the app falls back to showing
   the raw CUSIP and the company name straight from the SEC filing, so
   nothing is ever blank.
+- The Insider Activity page (Form 3/4/5) is scoped to the
+  `INSIDER_TRACKING_TOP_N` stocks (25 by default) held by the most tracked
+  funds - reusing Overlap's own "how widely held" ranking - and only keeps
+  the last `INSIDER_FILINGS_WINDOW_DAYS` (90 by default) of activity, both
+  configurable in `config.py`. Only trades in actual common stock are
+  shown (not options/RSUs), and every transaction is labeled with its real
+  SEC transaction code - most Form 4s are routine compensation or tax
+  events (grants, tax withholding, option exercises), not a genuine market
+  decision, so "insider bought/sold" isn't always what it sounds like; use
+  the page's filter to see only real open-market purchases and sales.
+- The Ownership Stakes page (Schedule 13D/13G) only covers filings from
+  December 18, 2024 onward - the date SEC started requiring these to be
+  filed in a structured, machine-readable format. Older filings are
+  free-text documents that aren't reliably parseable, so they're skipped
+  rather than guessed at. A joint filing can list several related entities
+  (a management company, its funds, a general partner); Schedule 13D
+  identifies each by CIK so matching to a tracked fund is exact, but
+  Schedule 13G's format doesn't include a CIK per entity, so that page
+  falls back to matching on the entity's name - reliable for how these
+  funds are usually named, but not guaranteed.
 
 ## Project files
 
@@ -164,7 +195,7 @@ the repo unused, or you can remove it.)
 | `cusip_lookup.py` | Maps CUSIPs to tickers via OpenFIGI, with caching |
 | `filing_calendar.py` | Computes the next 13F filing deadline (pure date math) |
 | `fetch_filings.py` | Refresh script - run this to get new data |
-| `queries.py` | Turns raw data into the five views |
+| `queries.py` | Turns raw data into the nine views |
 | `export.py` | Builds the Overlap page's "Download as Excel" file |
 | `app.py` | Flask web app (routes + page rendering) |
 | `templates/` | HTML pages |

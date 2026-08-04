@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Momentum - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>Momentum: Who's Buying, Who's Selling</h2>
+  <p class="empty">
+    Same grid as Overlap, but each cell is the <strong>change</strong> in a
+    fund's portfolio weight in a stock between its two most recent stored
+    filings, not the weight itself. <span class="tag-sample change-increase">+10.0%</span>
+    means that fund added roughly 10 percentage points of its own
+    portfolio to the stock; <span class="tag-sample change-decrease">-10.0%</span>
+    means it trimmed by roughly that much. <span class="tag-sample change-new">NEW</span>
+    marks a brand-new position, <span class="tag-sample change-sold_out">SOLD</span>
+    a full exit. Only stocks where at least one fund's share count actually
+    changed are shown - so unlike Overlap, a blank cell can mean either
+    "doesn't hold it" or "holds it but didn't trade it," and a stock with
+    no changes anywhere doesn't appear at all. The percentage itself is
+    based on portfolio value, so it can be nudged by the stock's own price
+    move as well as by actual buying or selling - the row only appears
+    because shares changed, but the size of the move shown isn't pure
+    trading.
+  </p>
+
+  {% if rows %}
+    <div class="table-scroll">
+      <table class="matrix momentum">
+        <thead>
+          <tr>
+            <th>Ticker</th>
+            <th>Company</th>
+            <th># Funds</th>
+            {% for fund in fund_columns %}
+              <th>{{ fund.name }}<br><span class="fund-total">{{ fund.total_value|usd_compact }}</span></th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>{{ row.ticker }}</td>
+              <td>{{ row.company_name }}</td>
+              <td class="fund-count">{{ row.fund_count }}</td>
+              {% for fund in fund_columns %}
+                {% if fund.name in row.changes_by_fund %}
+                  {% set c = row.changes_by_fund[fund.name] %}
+                  <td class="change-{{ c.direction }}">
+                    {{ c.pct_point_change|pct_change }}
+                    {%- if c.direction == 'new' %} <span class="tag">NEW</span>{% endif -%}
+                    {%- if c.direction == 'sold_out' %} <span class="tag">SOLD</span>{% endif -%}
+                  </td>
+                {% else %}
+                  <td class="not-held">&mdash;</td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">No quarter-over-quarter changes to compare yet - run <code>python fetch_filings.py</code> first, or check back once a fund has two stored filings.</p>
+  {% endif %}
+{% endblock %}

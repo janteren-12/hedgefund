@@ -158,6 +158,36 @@ FUNDS = [
 # Leave blank to use the free, unauthenticated (slower) rate limit.
 OPENFIGI_API_KEY = ""
 
+# Schedule 13D ("I own 5%+ and intend to influence the company") and
+# Schedule 13G (same 5%+ threshold, but passive/no control intent) are
+# only fetched from this date onward. SEC required these to be filed in
+# a structured, machine-readable XML format starting December 18, 2024 -
+# before that they're free-text HTML/text documents that aren't reliably
+# parseable, so we don't attempt it (see ownership_filings in db.py).
+OWNERSHIP_FILINGS_SINCE = "2024-12-18"
+
+# Insider trading (Form 3/4/5 - a company's own officers, directors, and
+# 10%+ owners reporting their personal trades) is scoped to the N stocks
+# held by the most tracked funds, reusing Overlap's own "how widely held"
+# ranking - "big companies" rather than an arbitrary list, and bounded so
+# the fetch stays fast (Overlap alone can include thousands of stocks from
+# the quant funds' small systematic positions).
+INSIDER_TRACKING_TOP_N = 25
+
+# Only insider transactions from this many days back are kept. Insider
+# trading is far higher-frequency than 13F/13D/13G, so a rolling window
+# (not "all filings ever") keeps this current and the database bounded.
+INSIDER_FILINGS_WINDOW_DAYS = 90
+
+# How many of each fund's most recent quarterly 13F filings to keep
+# stored. The Position History page uses this to show trends across
+# quarters (e.g. a fund steadily building a position), not just the
+# latest-vs-previous comparison the Selling & Buying page shows. Higher
+# means more history but a bigger database and a longer first-time (or
+# first-after-raising-this) fetch_filings.py run - 6 quarters is a year
+# and a half of history.
+QUARTERS_TO_KEEP = 6
+
 # Anchored to this file's own location (not the process's working
 # directory) so it resolves the same way locally, on Render, and on
 # Vercel, regardless of where each one happens to run the app from.
