@@ -660,3 +660,44 @@ def get_insider_activity(conn):
     ]
     results.sort(key=lambda r: r["fund_count"], reverse=True)
     return results
+
+
+def get_trivest_portfolio(conn):
+    """
+    Trivest Advisors Ltd's latest stored 13F-HR holdings - a standalone
+    page, not one of the tracked FUNDS, so this reads from its own
+    trivest_filings/trivest_holdings tables rather than the shared ones
+    every other view uses. Same row shape as get_positions_by_fund()'s
+    per-fund rows: ticker, company, value, % of portfolio, sorted by %
+    descending.
+    """
+    cusip_map = _cusip_map_lookup(conn)
+
+    filing = conn.execute(
+        "SELECT * FROM trivest_filings ORDER BY period_of_report DESC LIMIT 1"
+    ).fetchone()
+    if not filing:
+        return {"period": None, "filed_date": None, "rows": []}
+
+    holdings = conn.execute(
+        "SELECT * FROM trivest_holdings WHERE filing_id = ?", (filing["id"],)
+    ).fetchall()
+    total = sum(h["value_usd"] for h in holdings) or 1
+
+    rows = [
+        {
+            "ticker": _display_ticker(h["cusip"], cusip_map),
+            "company_name": _display_company(h["cusip"], h["issuer_name"], cusip_map),
+            "value_usd": h["value_usd"],
+            "pct": h["value_usd"] / total * 100,
+        }
+        for h in holdings
+    ]
+    rows.sort(key=lambda r: r["pct"], reverse=True)
+
+    return {
+        "period": filing["period_of_report"],
+        "filed_date": filing["filed_date"],
+        "total_value": total,
+        "rows": rows,
+    }

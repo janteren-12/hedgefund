@@ -18,7 +18,10 @@ history is kept overall. Schedule 13D/13G filings aren't pruned - they're
 rare enough (only filed when a fund crosses, or materially changes, a 5%+
 stake in some company) that there's no volume problem keeping all of
 them. Insider filings use a rolling day-count window instead (see
-INSIDER_FILINGS_WINDOW_DAYS) since they're filed far more often.
+INSIDER_FILINGS_WINDOW_DAYS) since they're filed far more often. Also
+refreshes Trivest Advisors Ltd's 13F filings for its own standalone page
+(config.py's TRIVEST_ADVISORS_CIK) - kept in separate tables so it can't
+affect any of the FUNDS-based cross-fund views.
 
 Usage:
     python fetch_filings.py
@@ -36,6 +39,7 @@ from config import (
     INSIDER_TRACKING_TOP_N,
     OWNERSHIP_FILINGS_SINCE,
     QUARTERS_TO_KEEP,
+    TRIVEST_ADVISORS_CIK,
 )
 
 
@@ -144,6 +148,62 @@ def fetch_insider_activity(conn):
     conn.commit()
 
 
+def fetch_trivest_advisors(conn):
+    """
+    Refresh Trivest Advisors Ltd's 13F-HR filings - a standalone page, not
+    one of the tracked FUNDS, so this uses its own tables (trivest_filings/
+    trivest_holdings) rather than the shared funds/filings/holdings ones.
+    Mirrors the main fund loop above (same "keep latest QUARTERS_TO_KEEP,
+    skip already-stored accessions" logic), just scoped to one CIK with no
+    fund-list bookkeeping needed.
+    """
+    print(f"\nTrivest Advisors Ltd (CIK {TRIVEST_ADVISORS_CIK})")
+
+    try:
+        latest_filings = edgar.get_recent_13f_hr_filings(TRIVEST_ADVISORS_CIK, limit=QUARTERS_TO_KEEP)
+    except Exception as exc:
+        print(f"  Could not fetch filing list: {exc}")
+        return []
+
+    if not latest_filings:
+        print("  No 13F-HR filings found.")
+        return []
+
+    existing = db.get_existing_trivest_accessions(conn)
+    new_cusips = []
+
+    for filing in latest_filings:
+        accession_no = filing["accession_no"]
+        period = filing["period_of_report"]
+
+        if accession_no in existing:
+            print(f"  {period}: already have it, skipping download.")
+            continue
+
+        print(f"  {period}: downloading holdings (accession {accession_no})...")
+        try:
+            holdings = edgar.get_filing_holdings(TRIVEST_ADVISORS_CIK, accession_no)
+        except Exception as exc:
+            print(f"    Failed to fetch/parse this filing: {exc}")
+            continue
+
+        if not holdings:
+            print("    No holdings parsed from this filing - skipping.")
+            continue
+
+        filing_id = db.insert_trivest_filing(conn, accession_no, period, filing["filed_date"])
+        db.insert_trivest_holdings(conn, filing_id, holdings)
+        conn.commit()
+        print(f"    Stored {len(holdings)} holdings.")
+        new_cusips.extend(h["cusip"] for h in holdings)
+
+    keep = {f["accession_no"] for f in latest_filings}
+    db.prune_trivest_old_filings(conn, keep)
+    conn.commit()
+
+    return new_cusips
+
+
 def main():
     conn = db.get_connection()
     all_new_cusips = []
@@ -208,6 +268,8 @@ def main():
         keep = {f["accession_no"] for f in latest_filings}
         db.prune_old_filings(conn, cik, keep)
         conn.commit()
+
+    all_new_cusips.extend(fetch_trivest_advisors(conn))
 
     if all_new_cusips:
         print()

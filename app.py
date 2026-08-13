@@ -20,6 +20,7 @@ from config import (
     INSIDER_TRACKING_TOP_N,
     OWNERSHIP_FILINGS_SINCE,
     QUARTERS_TO_KEEP,
+    TRIVEST_ADVISORS_NAME,
 )
 
 app = Flask(__name__)
@@ -143,6 +144,14 @@ def ownership():
     funds = queries.get_ownership_filings_by_fund(conn)
     conn.close()
     return render_template("ownership.html", funds=funds, since=OWNERSHIP_FILINGS_SINCE)
+
+
+@app.route("/trivest")
+def trivest():
+    conn = db.get_connection()
+    portfolio = queries.get_trivest_portfolio(conn)
+    conn.close()
+    return render_template("trivest.html", portfolio=portfolio, fund_name=TRIVEST_ADVISORS_NAME)
 
 
 @app.route("/insiders")

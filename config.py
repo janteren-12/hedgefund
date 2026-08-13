@@ -179,6 +179,15 @@ INSIDER_TRACKING_TOP_N = 25
 # (not "all filings ever") keeps this current and the database bounded.
 INSIDER_FILINGS_WINDOW_DAYS = 90
 
+# A single standalone fund with its own dedicated page - Trivest Advisors
+# Ltd (SEC CIK 1555623, Hong Kong) - kept deliberately separate from
+# FUNDS above so it can't skew any of the cross-fund views (Overlap,
+# Momentum, By Strategy, Biggest New Bets, or Insider Activity's "most
+# widely held" ranking). It's stored in its own tables and only ever
+# shown on its own page.
+TRIVEST_ADVISORS_CIK = "1555623"
+TRIVEST_ADVISORS_NAME = "Trivest Advisors Ltd"
+
 # How many of each fund's most recent quarterly 13F filings to keep
 # stored. The Position History page uses this to show trends across
 # quarters (e.g. a fund steadily building a position), not just the

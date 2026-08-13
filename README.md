@@ -9,10 +9,13 @@ position history, 5%+ ownership stakes (Schedule 13D/13G, separate from
 13F), insider buying/selling (Form 3/4/5, filed by a company's own
 officers/directors/10%+ owners - a different disclosure regime again) for
 the stocks your funds hold most widely, funds grouped by strategy, and a
-biggest-new-bets leaderboard ranked by dollar size. The Overlap table is
-also downloadable as an Excel file. A Privacy & Disclaimer page (linked in
-the footer of every page) explains what data this collects (nothing) and
-where the numbers come from. Runs locally out of the box; see
+biggest-new-bets leaderboard ranked by dollar size. There's also a
+standalone page for Trivest Advisors Ltd's portfolio, kept deliberately
+separate from the 20 tracked funds so it can't skew any of the cross-fund
+views. The Overlap table is also downloadable as an Excel file. A Privacy
+& Disclaimer page (linked in the footer of every page) explains what data
+this collects (nothing) and where the numbers come from. Runs locally out
+of the box; see
 [Deploying to Vercel (free)](#deploying-to-vercel-free) below if you want
 it reachable from anywhere.
 
@@ -184,6 +187,11 @@ the repo unused, or you can remove it.)
   Schedule 13G's format doesn't include a CIK per entity, so that page
   falls back to matching on the entity's name - reliable for how these
   funds are usually named, but not guaranteed.
+- Trivest Advisors Ltd (`TRIVEST_ADVISORS_CIK` in `config.py`) has its own
+  page and its own storage (`trivest_filings`/`trivest_holdings` tables) -
+  it's intentionally not part of `FUNDS`, so it never appears in Overlap,
+  Momentum, By Strategy, Biggest New Bets, or Insider Activity's "most
+  widely held" ranking.
 
 ## Project files
 

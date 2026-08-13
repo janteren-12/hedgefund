@@ -76,6 +76,27 @@ CREATE TABLE IF NOT EXISTS insider_filings (
     shares_owned_after REAL,
     filed_date TEXT NOT NULL
 );
+
+-- Deliberately separate from funds/filings/holdings above (not just a
+-- fund_cik value within them) so the Trivest Advisors page can never
+-- accidentally leak into Overlap, Momentum, By Strategy, or any other
+-- view that queries the funds table - it's a standalone page with its
+-- own storage, not a 21st tracked fund.
+CREATE TABLE IF NOT EXISTS trivest_filings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    accession_no TEXT NOT NULL UNIQUE,
+    period_of_report TEXT NOT NULL,
+    filed_date TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS trivest_holdings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filing_id INTEGER NOT NULL REFERENCES trivest_filings(id),
+    cusip TEXT NOT NULL,
+    issuer_name TEXT NOT NULL,
+    value_usd INTEGER NOT NULL,
+    shares INTEGER NOT NULL
+);
 """
 
 
@@ -232,3 +253,32 @@ def upsert_cusip_map(conn, cusip, ticker, company_name, resolved_at):
         "company_name = excluded.company_name, resolved_at = excluded.resolved_at",
         (cusip, ticker, company_name, resolved_at),
     )
+
+
+def get_existing_trivest_accessions(conn):
+    rows = conn.execute("SELECT accession_no FROM trivest_filings").fetchall()
+    return {row["accession_no"] for row in rows}
+
+
+def insert_trivest_filing(conn, accession_no, period_of_report, filed_date):
+    cur = conn.execute(
+        "INSERT INTO trivest_filings (accession_no, period_of_report, filed_date) VALUES (?, ?, ?)",
+        (accession_no, period_of_report, filed_date),
+    )
+    return cur.lastrowid
+
+
+def insert_trivest_holdings(conn, filing_id, holdings):
+    conn.executemany(
+        "INSERT INTO trivest_holdings (filing_id, cusip, issuer_name, value_usd, shares) "
+        "VALUES (:filing_id, :cusip, :issuer_name, :value_usd, :shares)",
+        [{**h, "filing_id": filing_id} for h in holdings],
+    )
+
+
+def prune_trivest_old_filings(conn, keep_accession_numbers):
+    rows = conn.execute("SELECT id, accession_no FROM trivest_filings").fetchall()
+    for row in rows:
+        if row["accession_no"] not in keep_accession_numbers:
+            conn.execute("DELETE FROM trivest_holdings WHERE filing_id = ?", (row["id"],))
+            conn.execute("DELETE FROM trivest_filings WHERE id = ?", (row["id"],))

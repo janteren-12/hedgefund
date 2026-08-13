@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Trivest Advisors - 13F Tracker{% endblock %}
+{% block content %}
+  <h2>{{ fund_name }}</h2>
+  <p class="empty">
+    A standalone page for one fund, kept separate from the 20 funds
+    tracked everywhere else in this app - it does <strong>not</strong>
+    appear in Overlap, Momentum, By Strategy, Biggest New Bets, or
+    Insider Activity's "most widely held" ranking. Same 13F-HR data
+    source and parsing as everywhere else, just shown on its own.
+  </p>
+
+  {% if portfolio.rows %}
+    <p class="empty">
+      As of {{ portfolio.period }} (filed {{ portfolio.filed_date }}) -
+      {{ portfolio.rows|length }} position{{ "s" if portfolio.rows|length != 1 else "" }},
+      {{ portfolio.total_value|usd }} total.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Ticker</th>
+          <th>Company</th>
+          <th>Market Value</th>
+          <th>% of Portfolio</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in portfolio.rows %}
+          <tr>
+            <td>{{ row.ticker }}</td>
+            <td>{{ row.company_name }}</td>
+            <td>{{ row.value_usd|usd }}</td>
+            <td>{{ row.pct|pct }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">No data yet - run <code>python fetch_filings.py</code>.</p>
+  {% endif %}
+{% endblock %}
