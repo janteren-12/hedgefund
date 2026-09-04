@@ -96,6 +96,81 @@ To find a fund's CIK number:
 Then re-run `python fetch_filings.py`. Removing a fund from the list also
 removes its data from the database next time you run the refresh script.
 
+## Quick Stock Analysis
+
+A standalone module (`stock_analysis.py`) that runs a 6-step heuristic
+checklist against one ticker and returns a structured pass/watchlist/invest
+verdict - a quick gut-check, not a substitute for real research.
+
+```
+python stock_analysis.py AAPL
+python stock_analysis.py AAPL --json report.json   # also write the result to a file
+```
+
+Or from Python:
+
+```python
+from stock_analysis import analyze_stock
+result = analyze_stock("AAPL")
+print(result["summary"]["verdict"])  # "Invest" / "Watchlist" / "Pass"
+```
+
+The 6 steps, each returned as a dict of `{value, flag, note}` per metric
+(`flag` is `true`/`false` against the threshold, or `null` where there's no
+pass/fail check - just a value, or nothing available):
+
+1. **Business Understanding** - what it does, sector/industry, CEO. Revenue
+   model and moat are left as `null`/"not available" on purpose - they're
+   qualitative judgment calls this module won't guess at from an API. Run
+   Method 8 (Competitive/Sector Analysis) or the Legends page in the
+   investment-research-hub web app for those.
+2. **Basic Financials** - revenue/profit growth trend, ROE, debt-to-equity,
+   net margin, quick ratio, interest coverage.
+3. **Quick Valuation** - P/E, PEG, EV/EBITDA, price/book, dividend yield.
+   Industry-average comparisons aren't available (would need a
+   sector-constituent dataset this project doesn't have), so P/E is only
+   checked against the flat threshold below.
+4. **Promoter & Management / Ownership** - insider ownership %,
+   institutional ownership %, recent insider buying/selling, and which of
+   this project's 20 tracked hedge funds currently hold the stock (reuses
+   `edgar.py` and `db.py` directly - see "Where the data comes from" below).
+5. **Industry & Risk** - sector/industry classification and beta (a rough
+   cyclicality proxy). Growth trend and fragmentation are left
+   `null`/"not available" for the same reason as moat above.
+6. **Final Decision** - `summary.verdict` (`Invest` / `Watchlist` / `Pass`),
+   `summary.red_flags` (which section+field failed and why), based on how
+   many checkable metrics failed their threshold.
+
+**Where the data comes from:**
+- Financials, valuation multiples, and ownership percentages: **yfinance**
+  (free, no API key - already used elsewhere in this workspace, in
+  `macro-sector-optimizer/requirements.txt`). Not in this project's
+  `requirements.txt` before now; added alongside this module.
+- Insider buying/selling (Form 3/4/5): this project's own `edgar.py`,
+  called live for whatever ticker you ask about - the same functions
+  `fetch_filings.py` uses for the Insider Activity page, just not limited
+  to its pre-cached `INSIDER_TRACKING_TOP_N` list.
+- "Held by N of your tracked funds": this project's own `data/filings.db`,
+  via a query mirroring `queries.py`'s "latest filing per fund" pattern.
+
+**Two things this checklist can't give you, on purpose:**
+- **Pledging of shares** is always `"not available"`. This checklist was
+  originally written using Indian-market conventions ("promoter holding",
+  "pledging of shares" - SEBI disclosure terms), and pledging has no
+  reliable US-market equivalent data source. "Promoter holding" itself is
+  reinterpreted here as insider ownership %, which the US does disclose.
+- **Moat, industry growth trend, and fragmentation** aren't derived - they
+  need real judgment and sourcing, not a threshold check. Each is flagged
+  `null` with a pointer to which method in the investment-research-hub web
+  app can actually research it.
+
+**Tuning:** every threshold (`MIN_ROE_PCT`, `MAX_DEBT_TO_EQUITY`, `MAX_PE`,
+`MAX_PEG`, `MIN_NET_MARGIN_PCT`, `MIN_QUICK_RATIO`,
+`MIN_INTEREST_COVERAGE`, `MAX_RED_FLAGS_FOR_WATCHLIST`, and the two
+"meaningful ownership" cutoffs) is a constant at the top of
+`stock_analysis.py`. They're rough heuristic starting points from a
+checklist, not backtested - change them freely.
+
 ## Deploying to Vercel (free)
 
 Like Render's free tier, Vercel's free (Hobby) plan has no persistent
@@ -204,6 +279,7 @@ the repo unused, or you can remove it.)
 | `filing_calendar.py` | Computes the next 13F filing deadline (pure date math) |
 | `fetch_filings.py` | Refresh script - run this to get new data |
 | `queries.py` | Turns raw data into the nine views |
+| `stock_analysis.py` | Quick Stock Analysis - 6-step checklist for one ticker, see above |
 | `export.py` | Builds the Overlap page's "Download as Excel" file |
 | `app.py` | Flask web app (routes + page rendering) |
 | `templates/` | HTML pages |
