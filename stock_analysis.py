@@ -73,6 +73,18 @@ MIN_MEANINGFUL_INSTITUTIONAL_OWNERSHIP_PCT = 30.0
 
 INSIDER_LOOKBACK_DAYS = 90  # same convention as config.INSIDER_FILINGS_WINDOW_DAYS
 
+# Fetching every Form 4 filing in the lookback window in full is fine for a
+# handful of filings, but a heavily-filed large-cap can have 100+ in 90 days
+# (each requiring its own throttled SEC request) - measured 23s for GOOGL
+# with no cap, still 8.5s end-to-end through the /analyze web route at a
+# cap of 15. app.py's /analyze route calls this live on Vercel, whose
+# Hobby plan gives serverless functions a 10s hard limit (see this
+# project's README) - 8 keeps real-world latency (measured ~5s for
+# GOOGL/MSFT through the actual web route) comfortably clear of that wall
+# even with cold-start and network variance, while still keeping the
+# "recent buying vs selling" signal this checklist actually needs.
+MAX_INSIDER_FILINGS_TO_FETCH = 8
+
 # More red flags than this -> "Pass" instead of "Watchlist".
 MAX_RED_FLAGS_FOR_WATCHLIST = 2
 
@@ -308,12 +320,24 @@ def _tracked_fund_holders(conn, ticker):
 
 
 def _insider_transactions(ticker_cik):
-    """Live SEC Form 4 pull for one issuer CIK, via this project's own edgar.py - not scoped to the top-N list."""
+    """
+    Live SEC Form 4 pull for one issuer CIK, via this project's own edgar.py
+    - not scoped to the top-N list. Capped to the MAX_INSIDER_FILINGS_TO_FETCH
+    most recent filings (get_recent_insider_filings already returns newest
+    first) - a heavily-filed large-cap can have 100+ Form 4s in 90 days, each
+    needing its own throttled SEC request, so fetching every single one made
+    this take 20+ seconds for names like GOOGL.
+
+    Returns (transactions, truncated, error).
+    """
     since_date = (datetime.now(timezone.utc) - timedelta(days=INSIDER_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
     try:
         filings = edgar.get_recent_insider_filings(ticker_cik, since_date=since_date)
     except Exception as exc:
-        return None, f"SEC EDGAR request failed: {exc}"
+        return None, False, f"SEC EDGAR request failed: {exc}"
+
+    truncated = len(filings) > MAX_INSIDER_FILINGS_TO_FETCH
+    filings = filings[:MAX_INSIDER_FILINGS_TO_FETCH]
 
     transactions = []
     for f in filings:
@@ -337,7 +361,7 @@ def _insider_transactions(ticker_cik):
                 }
             )
     transactions.sort(key=lambda r: r["date"], reverse=True)
-    return transactions, None
+    return transactions, truncated, None
 
 
 def _ownership(conn, ticker, info, ticker_cik):
@@ -345,13 +369,19 @@ def _ownership(conn, ticker, info, ticker_cik):
     institutional_pct = _pct(info.get("heldPercentInstitutions"))
     tracked_holders = _tracked_fund_holders(conn, ticker)
 
-    insider_txns, insider_err = (None, "Could not resolve this ticker's SEC CIK.")
+    insider_txns, truncated, insider_err = (None, False, "Could not resolve this ticker's SEC CIK.")
     if ticker_cik:
-        insider_txns, insider_err = _insider_transactions(ticker_cik)
+        insider_txns, truncated, insider_err = _insider_transactions(ticker_cik)
 
     open_market = [tx for tx in (insider_txns or []) if tx["is_open_market"]]
     buys = [tx for tx in open_market if tx["acquired_disposed"] == "A"]
     sells = [tx for tx in open_market if tx["acquired_disposed"] == "D"]
+    truncation_note = (
+        f" (capped to the {MAX_INSIDER_FILINGS_TO_FETCH} most recent Form 4 filings - this issuer files more often "
+        "than that; older ones in the window aren't counted)"
+        if truncated
+        else ""
+    )
 
     if insider_txns is None:
         insider_note = insider_err
@@ -359,13 +389,14 @@ def _ownership(conn, ticker, info, ticker_cik):
     elif open_market:
         insider_note = (
             f"{len(buys)} open-market buy(s), {len(sells)} open-market sale(s) in the last "
-            f"{INSIDER_LOOKBACK_DAYS} days (SEC Form 4, via this project's own edgar.py)."
+            f"{INSIDER_LOOKBACK_DAYS} days (SEC Form 4, via this project's own edgar.py){truncation_note}."
         )
         insider_flag = len(buys) >= len(sells)
     elif insider_txns:
         insider_note = (
             f"No open-market insider buys or sells in the last {INSIDER_LOOKBACK_DAYS} days "
-            f"({len(insider_txns)} non-open-market Form 4 event(s) only - grants, tax withholding, etc.)."
+            f"({len(insider_txns)} non-open-market Form 4 event(s) only - grants, tax withholding, "
+            f"etc.){truncation_note}."
         )
         insider_flag = None
     else:

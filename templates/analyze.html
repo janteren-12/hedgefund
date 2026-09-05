@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Quick Stock Analysis - 13F Tracker{% endblock %}
+{% block content %}
+
+{% macro flag_icon(flag) -%}
+  {%- if flag == true %}✅{% elif flag == false %}❌{% else %}—{% endif -%}
+{%- endmacro %}
+
+{% macro flag_row(label, m) %}
+  <tr class="{{ 'flag-pass' if m.flag == true else 'flag-fail' if m.flag == false else '' }}">
+    <td>{{ label }}</td>
+    <td>{{ m.value if m.value is not none else "—" }}</td>
+    <td>{{ flag_icon(m.flag) }}</td>
+    <td class="note">{{ m.note }}</td>
+  </tr>
+{% endmacro %}
+
+{% macro growth_row(label, m) %}
+  <tr>
+    <td>{{ label }}</td>
+    <td>
+      {% if m.value is string %}
+        {{ m.value }}
+      {% else %}
+        {% for g in m.value %}{{ g.period }}: {{ "%+.1f"|format(g.yoy_pct) }}%{% if not loop.last %}, {% endif %}{% endfor %}
+      {% endif %}
+    </td>
+    <td>—</td>
+    <td class="note">{{ m.note }}</td>
+  </tr>
+{% endmacro %}
+
+  <h2>Quick Stock Analysis</h2>
+  <p class="empty">
+    A 6-step heuristic checklist for one ticker - business understanding,
+    basic financials, quick valuation, promoter/ownership, industry &amp;
+    risk, and a final pass/watchlist/invest verdict. Thresholds are rough
+    starting points from a checklist, not backtested - see
+    <code>stock_analysis.py</code> to tune them. This is a quick gut-check,
+    not a substitute for real research.
+  </p>
+
+  <form method="get" action="{{ url_for('analyze') }}" class="filter-bar">
+    <label for="ticker">Ticker:</label>
+    <input type="text" id="ticker" name="ticker" value="{{ ticker }}" placeholder="e.g. AAPL" autocapitalize="characters">
+    <button type="submit">Analyze</button>
+  </form>
+
+  {% if result and result.error %}
+    <p class="empty">{{ result.error }}</p>
+  {% elif result %}
+
+    <section>
+      <h3>Summary
+        <span class="period">generated {{ result.generated_at }}</span>
+      </h3>
+      <p>
+        <span class="verdict-badge verdict-{{ result.summary.verdict|lower }}">{{ result.summary.verdict }}</span>
+        {{ result.summary.reason }}
+      </p>
+      {% if result.summary.red_flags %}
+        <ul>
+          {% for f in result.summary.red_flags %}
+            <li><strong>{{ f.section }} / {{ f.field }}</strong> - {{ f.note }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+
+    <section>
+      <h3>1. Business Understanding</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Value</th><th></th><th>Note</th></tr></thead>
+        <tbody>
+          {{ flag_row("Company", result.business_understanding.company_name) }}
+          {{ flag_row("What it does", result.business_understanding.what_it_does) }}
+          {{ flag_row("Sector", result.business_understanding.sector) }}
+          {{ flag_row("Industry", result.business_understanding.industry) }}
+          {{ flag_row("CEO", result.business_understanding.ceo) }}
+          {{ flag_row("Revenue model", result.business_understanding.revenue_model) }}
+          {{ flag_row("Moat", result.business_understanding.moat) }}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h3>2. Basic Financials</h3>
+      <table>
+        <thead><tr><th>Metric</th><th>Value</th><th>Flag</th><th>Note</th></tr></thead>
+        <tbody>
+          {{ growth_row("Revenue growth trend", result.basic_financials.revenue_growth_trend) }}
+          {{ growth_row("Profit growth trend", result.basic_financials.profit_growth_trend) }}
+          {{ flag_row("ROE %", result.basic_financials.roe_pct) }}
+          {{ flag_row("Debt-to-equity", result.basic_financials.debt_to_equity) }}
+          {{ flag_row("Net profit margin %", result.basic_financials.net_profit_margin_pct) }}
+          {{ flag_row("Quick ratio", result.basic_financials.quick_ratio) }}
+          {{ flag_row("Interest coverage", result.basic_financials.interest_coverage_ratio) }}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h3>3. Quick Valuation</h3>
+      <table>
+        <thead><tr><th>Metric</th><th>Value</th><th>Flag</th><th>Note</th></tr></thead>
+        <tbody>
+          {{ flag_row("P/E ratio", result.quick_valuation.pe_ratio) }}
+          {{ flag_row("PEG ratio", result.quick_valuation.peg_ratio) }}
+          {{ flag_row("EV/EBITDA", result.quick_valuation.ev_to_ebitda) }}
+          {{ flag_row("Price/Book", result.quick_valuation.price_to_book) }}
+          {{ flag_row("Dividend yield %", result.quick_valuation.dividend_yield_pct) }}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h3>4. Promoter &amp; Management / Ownership</h3>
+      <table>
+        <thead><tr><th>Metric</th><th>Value</th><th>Flag</th><th>Note</th></tr></thead>
+        <tbody>
+          {{ flag_row("Insider ownership %", result.ownership.insider_ownership_pct) }}
+          {{ flag_row("Pledging %", result.ownership.pledging_pct) }}
+          {{ flag_row("Institutional ownership %", result.ownership.institutional_ownership_pct) }}
+          <tr>
+            <td>Held by tracked funds</td>
+            <td>
+              {% if result.ownership.tracked_fund_holders.value %}
+                {% for h in result.ownership.tracked_fund_holders.value %}{{ h.fund_name }} ({{ h.value_usd|usd_compact }}){% if not loop.last %}, {% endif %}{% endfor %}
+              {% else %}
+                none of the 20 tracked funds
+              {% endif %}
+            </td>
+            <td>—</td>
+            <td class="note">{{ result.ownership.tracked_fund_holders.note }}</td>
+          </tr>
+          <tr class="{{ 'flag-pass' if result.ownership.recent_insider_transactions.flag == true else 'flag-fail' if result.ownership.recent_insider_transactions.flag == false else '' }}">
+            <td>Recent insider transactions</td>
+            <td>
+              {% if result.ownership.recent_insider_transactions.value is string %}
+                {{ result.ownership.recent_insider_transactions.value }}
+              {% else %}
+                {{ result.ownership.recent_insider_transactions.value|length }} transaction(s) - see below
+              {% endif %}
+            </td>
+            <td>{{ flag_icon(result.ownership.recent_insider_transactions.flag) }}</td>
+            <td class="note">{{ result.ownership.recent_insider_transactions.note }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {% if result.ownership.recent_insider_transactions.value is not string and result.ownership.recent_insider_transactions.value %}
+        <details>
+          <summary>Transaction detail</summary>
+          <table>
+            <thead>
+              <tr><th>Insider</th><th>Date</th><th>Type</th><th>Shares</th><th>Price</th></tr>
+            </thead>
+            <tbody>
+              {% for t in result.ownership.recent_insider_transactions.value %}
+                <tr class="{{ 'txn-acquired' if t.acquired_disposed == 'A' else 'txn-disposed' if t.acquired_disposed == 'D' else '' }}">
+                  <td>{{ t.owner_name }}</td>
+                  <td>{{ t.date }}</td>
+                  <td>{{ t.code_label }} ({{ t.code }})</td>
+                  <td>{{ t.shares|shares }}</td>
+                  <td>{{ t.price_per_share|usd2 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </details>
+      {% endif %}
+    </section>
+
+    <section>
+      <h3>5. Industry &amp; Risk</h3>
+      <table>
+        <thead><tr><th>Field</th><th>Value</th><th></th><th>Note</th></tr></thead>
+        <tbody>
+          {{ flag_row("Sector", result.industry_risk.sector) }}
+          {{ flag_row("Industry", result.industry_risk.industry) }}
+          {{ flag_row("Industry growth trend", result.industry_risk.industry_growth_trend) }}
+          {{ flag_row("Cyclicality (beta)", result.industry_risk.cyclicality_beta) }}
+          {{ flag_row("Fragmentation", result.industry_risk.fragmentation) }}
+        </tbody>
+      </table>
+    </section>
+
+  {% endif %}
+{% endblock %}

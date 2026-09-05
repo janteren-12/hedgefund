@@ -326,6 +326,43 @@ tbody tr.txn-disposed {
   background: #f8e6e6;
 }
 
+tbody tr.flag-pass {
+  background: #e4f0e0;
+}
+
+tbody tr.flag-fail {
+  background: #f8e6e6;
+}
+
+td.note {
+  color: #666;
+  font-size: 0.85rem;
+  max-width: 32ch;
+}
+
+.verdict-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+.verdict-invest {
+  background: #e4f0e0;
+  color: #1a7a1a;
+}
+
+.verdict-watchlist {
+  background: #fdf3d9;
+  color: #8a6d00;
+}
+
+.verdict-pass {
+  background: #f8e6e6;
+  color: #a51c1c;
+}
+
 code {
   background: #f0f0f0;
   padding: 0.1rem 0.35rem;

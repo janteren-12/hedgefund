@@ -7,3 +7,6 @@ venv/
 # purpose so the deployed site (which has no persistent disk on Render's
 # free plan) ships with real data on every deploy. See
 # .github/workflows/refresh.yml, which keeps it up to date.
+
+.vercel
+.env*

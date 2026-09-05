@@ -13,6 +13,7 @@ import db
 import export
 import filing_calendar
 import queries
+from stock_analysis import analyze_stock
 from config import (
     ADMIN_USERNAME,
     ADMIN_PASSWORD,
@@ -189,6 +190,21 @@ def new_bets():
     leaderboard = queries.get_new_bets_leaderboard(conn)
     conn.close()
     return render_template("new_bets.html", leaderboard=leaderboard)
+
+
+@app.route("/analyze")
+def analyze():
+    """
+    Quick Stock Analysis (stock_analysis.py) for one ticker, entered by the
+    visitor rather than pre-scoped to any tracked fund's holdings. Unlike
+    every other page here, this makes live calls (Yahoo Finance + SEC
+    EDGAR) at request time instead of reading the pre-fetched database -
+    see stock_analysis.py's MAX_INSIDER_FILINGS_TO_FETCH comment for why
+    that's capped to stay well under Vercel's function time limit.
+    """
+    ticker = (request.args.get("ticker") or "").strip().upper()
+    result = analyze_stock(ticker) if ticker else None
+    return render_template("analyze.html", ticker=ticker, result=result)
 
 
 @app.route("/overlap.xlsx")
